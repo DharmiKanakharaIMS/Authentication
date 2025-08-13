@@ -8,26 +8,36 @@ function Register() {
     const [roles, setRoles] = useState([]);
   
   const { loading, error, message } = useSelector((state) => state.auth);
-  useEffect(()=>{
-    const { accessToken } = JSON.parse(localStorage.getItem('auth'));
-    async function getRoles()  
-    {
-      try {
-      const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/get-roles`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const data = response.data.data
-      setRoles(data.roles)      
+ useEffect(() => {
+  const authData = JSON.parse(localStorage.getItem('auth') || "{}");
+  const accessToken = authData?.accessToken;
+  if (!accessToken) {
+    console.error("No access token found");
+    return;
+  }
+
+  async function getRoles() {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/get-roles`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const data = response.data.data;
+      setRoles(data.roles);
     } catch (err) {
       console.error("Failed to fetch roles", err);
     }
-    }
-    getRoles()
-  },[])
+  }
 
-  const [formData, setFormData] = useState({
+  getRoles();
+}, []);
+
+
+  const [formData, setFormData] = useState({    
     name: "",
     email: "",
     password: "1234",
@@ -44,6 +54,7 @@ function Register() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  
   const handleAddTechnology = () => {
     if (techInput.trim() && !formData.technologies.includes(techInput)) {
       setFormData((prev) => ({
@@ -64,13 +75,9 @@ function Register() {
   const handleSubmit = (e) => {
     e.preventDefault();
     dispatch(registerUser(formData));
-
-  };
-
-  useEffect(() => {
     if (message) {
-      alert(message);
-      setFormData({
+    alert(message);
+    setFormData({
       name: "",
       email: "",
       password: "1234",
@@ -80,11 +87,13 @@ function Register() {
       technologies: [],
     });
     setTechInput("");
-    } else if (error) {
-      alert(error);
-    }
-  }, [message, error]);
+  }
+  if (error) {
+    alert(error);
+  }
+  };
 
+  
   return (
     <div className="min-h-screen flex items-center justify-center ">
       <div className="w-full max-w-lg bg-white p-8 rounded-xl shadow-md">
@@ -115,18 +124,6 @@ function Register() {
               autoComplete="email"
             />
           </div>
-          {/* <div>
-            <label className="block mb-1">Password</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2 border rounded-md"
-              autoComplete="email"
-            />
-          </div> */}
 
           <div>
             <label className="block mb-1">Phone</label>
@@ -166,6 +163,19 @@ function Register() {
               name="qualification"
               value={formData.qualification}
               onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded-md"
+            />
+          </div>
+          <div>
+            <label className="block mb-1">Qualification</label>
+            <input
+              type="file"
+              name="profile"
+              accept="image/*"
+              onChange={(event) => {
+                setSelectedFile(event.target.files[0]);
+              }}
               required
               className="w-full px-4 py-2 border rounded-md"
             />
@@ -216,12 +226,7 @@ function Register() {
             {loading ? "Adding..." : "Add User"}
           </button>
         </form>
-        {/* <p className="text-sm text-center text-gray-600 mt-6">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-500 hover:underline">
-            Login
-          </Link>
-        </p> */}
+
       </div>
     </div>
   );

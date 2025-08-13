@@ -68,58 +68,59 @@ function RoleDetail() {
         </p>
 
         {/* Example Permissions List */}
-       <div className="overflow-x-auto">
-  <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-    <thead className="bg-gray-100 text-gray-700">
-      <tr>
-        <th className="px-4 py-2 text-left">Page Name</th>
-        <th className="px-4 py-2 text-center">View</th>
-        <th className="px-4 py-2 text-center">Add</th>
-        <th className="px-4 py-2 text-center">Edit</th>
-        <th className="px-4 py-2 text-center">Delete</th>
-        <th className="px-4 py-2 text-center">Allow All</th>
-      </tr>
-    </thead>
-    <tbody>
-      {permissions?.length ? (
-        permissions.map((perm) => {
-          const actions = ["read", "add", "edit", "delete"];
-          const hasAll = actions.every(action => perm.permissions.includes(action));
-          
-          return (
-            <tr key={perm._id} className="border-t hover:bg-gray-50">
-              <td className="px-4 py-2 capitalize">
-                {perm.pageId ? perm.pageId.name : "No page assigned"}
-              </td>
-              {actions.map((action) => (
-                <td key={action} className="px-4 py-2 text-center">
-                  {perm.permissions.includes(action) ? (
-                    <span className="text-green-600 font-semibold">✔</span>
-                  ) : (
-                    <span className="text-red-500 font-semibold">✘</span>
-                  )}
-                </td>
-              ))}
-              <td className="px-4 py-2 text-center">
-                {hasAll ? (
-                  <span className="text-green-600 font-semibold">✔</span>
-                ) : (
-                  <span className="text-red-500 font-semibold">✘</span>
-                )}
-              </td>
+        <div className="overflow-x-auto">
+            <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+            <thead className="bg-gray-100 text-gray-700">
+            <tr>
+                <th className="px-4 py-2 text-left">Page Name</th>
+                <th className="px-4 py-2 text-center">View</th>
+                <th className="px-4 py-2 text-center">Add</th>
+                <th className="px-4 py-2 text-center">Edit</th>
+                <th className="px-4 py-2 text-center">Delete</th>
+                <th className="px-4 py-2 text-center">Allow All</th>
             </tr>
-          );
-        })
-      ) : (
-        <tr>
-          <td colSpan="6" className="text-center text-gray-400 py-4">
-            No permissions assigned.
-          </td>
-        </tr>
-      )}
-    </tbody>
-  </table>
-</div>
+            </thead>
+            <tbody>
+            {permissions?.length ? (
+                permissions.map((perm) => {
+                const actions = ["read", "add", "edit", "delete"];
+                const hasAll = actions.every(action => perm.permissions.includes(action));
+                
+                return (
+                    <tr key={perm._id} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-2 capitalize">
+                        {perm.pageId ? perm.pageId.name : "No page assigned"}
+                    </td>
+                    {actions.map((action) => (
+                        <td key={action} className="px-4 py-2 text-center">
+                        {perm.permissions.includes(action) ? (
+                            <span className="text-green-600 font-semibold">✔</span>
+                        ) : (
+                            <span className="text-red-500 font-semibold">✘</span>
+                        )}
+                        </td>
+                    ))}
+                    <td className="px-4 py-2 text-center">
+                        {hasAll ? (
+                        <span className="text-green-600 font-semibold">✔</span>
+                        ) : (
+                        <span className="text-red-500 font-semibold">✘</span>
+                        )}
+                    </td>
+                    </tr>
+                );
+                })
+            ) : (
+                <tr>
+                <td colSpan="6" className="text-center text-gray-400 py-4">
+                    No permissions assigned.
+                </td>
+                </tr>
+            )}
+            </tbody>
+            </table>
+            
+        </div>
 
 
 

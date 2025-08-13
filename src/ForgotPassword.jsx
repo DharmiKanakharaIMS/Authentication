@@ -16,6 +16,7 @@ const handleSubmit = async (e) => {
       `${import.meta.env.VITE_BASE_URL}/auth/forgot-password`,
       { email }
     );
+    
     // Assuming your API responds with success message
     setMessage({ type: 'success', text: res.data.message || 'Password reset link sent to your email.' });
   } catch (error) {
