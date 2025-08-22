@@ -6,7 +6,10 @@ import { useDispatch, useSelector } from "react-redux";
 function Register() {
   const dispatch = useDispatch();
     const [roles, setRoles] = useState([]);
+    // const [selectedFile, setselectedFile] = useState(null)
+    // const [preview, setpreview] = useState(null)
   
+
   const { loading, error, message } = useSelector((state) => state.auth);
  useEffect(() => {
   const authData = JSON.parse(localStorage.getItem('auth') || "{}");
@@ -37,7 +40,7 @@ function Register() {
 }, []);
 
 
-  const [formData, setFormData] = useState({    
+  const [userData, setUserData] = useState({    
     name: "",
     email: "",
     password: "1234",
@@ -45,19 +48,28 @@ function Register() {
     role: "",
     qualification: "",
     technologies: [],
+    // profileImage:''
   });
 
   const [techInput, setTechInput] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setUserData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // const handleFileChange = (event) => {
+  //       let imageFile = event.target.files[0]
+  //       setselectedFile(imageFile);
+  //       setUserData(prev => ({ ...prev, profileImage: imageFile }));
+
+  //       let generateUrl = URL.createObjectURL(imageFile)
+  //       setpreview(generateUrl)
+  // }
   
   const handleAddTechnology = () => {
-    if (techInput.trim() && !formData.technologies.includes(techInput)) {
-      setFormData((prev) => ({
+    if (techInput.trim() && !userData.technologies.includes(techInput)) {
+      setUserData((prev) => ({
         ...prev,
         technologies: [...prev.technologies, techInput.trim()],
       }));
@@ -66,32 +78,55 @@ function Register() {
   };
 
   const handleRemoveTechnology = (tech) => {
-    setFormData((prev) => ({
+    setUserData((prev) => ({
       ...prev,
       technologies: prev.technologies.filter((t) => t !== tech),
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    dispatch(registerUser(formData));
-    if (message) {
-    alert(message);
-    setFormData({
-      name: "",
-      email: "",
-      password: "1234",
-      phone: "",
-      role: "",
-      qualification: "",
-      technologies: [],
-    });
-    setTechInput("");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // if (!selectedFile) {
+  //   alert("Please select an image");
+  //   return;
+  // }
+
+  try {
+    // Upload image first
+    // const formData = new FormData();
+    // formData.append("profileImage", selectedFile);
+
+    // const res = await axios.post(
+    //   `${import.meta.env.VITE_BASE_URL}/auth/profile-upload-image`,
+    //   formData,
+    //   { headers: { "Content-Type": "multipart/form-data" } }
+    // );
+
+    // const imageUrl = res.data.ImageUrl;
+
+    // Prepare final user payload
+    // const payload = {
+    //   ...userData
+    // };
+
+    dispatch(registerUser(userData)); // Pass updated object directly
+    alert("User registered Successfully")
+    setUserData({
+    name: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "",
+    qualification: "",
+    technologies: [],
+    })
+  } catch (err) {
+    console.error("Error uploading image or registering user", err);
   }
-  if (error) {
-    alert(error);
-  }
-  };
+};
+
+
 
   
   return (
@@ -105,7 +140,7 @@ function Register() {
             <input
               type="text"
               name="name"
-              value={formData.name}
+              value={userData.name}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border rounded-md"
@@ -117,7 +152,7 @@ function Register() {
             <input
               type="email"
               name="email"
-              value={formData.email}
+              value={userData.email}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border rounded-md"
@@ -130,7 +165,7 @@ function Register() {
             <input
               type="tel"
               name="phone"
-              value={formData.phone}
+              value={userData.phone}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border rounded-md"
@@ -141,7 +176,7 @@ function Register() {
             <label className="block mb-1">Role</label>
             <select
               name="role"
-              value={formData.role}
+              value={userData.role}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-md capitalize"
             >
@@ -161,25 +196,23 @@ function Register() {
             <input
               type="text"
               name="qualification"
-              value={formData.qualification}
+              value={userData.qualification}
               onChange={handleChange}
               required
               className="w-full px-4 py-2 border rounded-md"
             />
           </div>
-          <div>
-            <label className="block mb-1">Qualification</label>
-            <input
-              type="file"
-              name="profile"
-              accept="image/*"
-              onChange={(event) => {
-                setSelectedFile(event.target.files[0]);
-              }}
-              required
-              className="w-full px-4 py-2 border rounded-md"
-            />
-          </div>
+          {/* <div>
+  <label className="block mb-1">Profile Image</label>
+  <input
+    type="file"
+    name="profileImage"
+    accept="image/*"
+    onChange={handleFileChange}
+    required
+    className="w-full px-4 py-2 border rounded-md"
+  />
+</div> */}
 
           <div>
             <label className="block mb-1">Technologies</label>
@@ -200,7 +233,7 @@ function Register() {
               </button>
             </div>
             <div className="flex flex-wrap mt-2 gap-2">
-              {formData.technologies.map((tech, index) => (
+              {userData.technologies.map((tech, index) => (
                 <span
                   key={index}
                   className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center"

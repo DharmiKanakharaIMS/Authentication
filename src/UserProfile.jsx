@@ -1,4 +1,4 @@
-import  { useEffect, useState } from "react";
+import  { useEffect, useRef, useState } from "react";
 import {
   Edit,
   LogOut,
@@ -20,57 +20,67 @@ function UserProfile() {
 
   const [user, setUser] = useState({});
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [userData, setuserData] = useState({
     name: "",
     email: "",
     phone: "",
     role: "",
     qualification: "",
     technologies: "",
+    // profileImage: ""
   });
 
 
 
-  useEffect(() => {
-    async function getUser() {
-      try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/auth/get-profile`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-        const data = res.data.data;
-        setUser(data);
-      } catch (err) {
-        console.error("Error fetching user profile:", err);
-      }
+useEffect(() => {
+  async function getUser() {
+    try {
+      // console.log("Fetching profile from:", `${import.meta.env.VITE_BASE_URL}/auth/get-profile`);
+      // console.log("Token:", accessToken);
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/auth/get-profile`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      // console.log("Profile response:", res.data);
+
+      const data = res.data.data;
+
+      // const profileImage = data.profileImage?.startsWith("/uploads")
+      //   ? `${import.meta.env.VITE_BASE_URL}${data.profileImage}`
+      //   : data.profileImage;
+
+      setUser({ ...data});
+    } catch (err) {
+      console.error("Error fetching user profile:", err.response?.data || err);
     }
-    if (accessToken) {
-      getUser();
-    }
-  }, [accessToken,user]);
+  }
+  if (accessToken) getUser();
+}, [accessToken]);
+
 
   const handleEditClick = () => {
-    setFormData({
+    setuserData({
       name: user.name || "",
       email: user.email || "",
       phone: user.phone || "",
       role: user.role || "",
       qualification: user.qualification || "",
       technologies: user.technologies?.join(", ") || "",
+      // profileImage: user.profileImage || ""
     });
     setShowModal(true);
   };
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
+    setuserData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
   };
+   
 
 const handleSave = async () => {
   const userId = user.userId || user.id || user._id;
@@ -79,7 +89,7 @@ const handleSave = async () => {
     return;
   }
 
-  const { role, technologies, ...rest } = formData;
+  const { role, technologies, ...rest } = userData;
   const body = {
     userId,
     ...rest,
@@ -138,13 +148,22 @@ const handleLogout = async () => {
     <>
       <div className="max-w-lg mx-auto mt-10 p-6 bg-white rounded-xl shadow-lg border border-gray-200 space-y-5">
         {/* Profile Image */}
-        <div className="flex flex-col items-center">
-          <img
-            src={user.profileImage || "https://via.placeholder.com/150"}
-            alt={user.name || "Profile"}
-            className="w-28 h-28 rounded-full border-4 border-white shadow-md mb-4"
-          />
-        </div>
+       <div className="flex flex-col items-center">
+      <img
+        src={user.profileImage}
+        alt={user.name || "Profile"}
+        className="w-28 h-28 rounded-full border-4 border-white shadow-md mb-4 cursor-pointer"
+        // onClick={handleImageClick} // 👈 click image to open file picker
+      />
+      {/* <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/*"
+        onChange={handleFileChange}
+      /> */}
+    </div>
+
 
         {/* Name */}
         <div>
@@ -237,20 +256,20 @@ const handleLogout = async () => {
               <input
                 type="text"
                 name="name"
-                value={formData.name}
+                value={userData.name}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 placeholder="Name"
               />
               {/* Role - not editable */}
               <p className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-600">
-                {formData.role || "NA"}
+                {userData.role || "NA"}
               </p>
               {/* Email */}
               <input
                 type="email"
                 name="email"
-                value={formData.email}
+                value={userData.email}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 placeholder="Email"
@@ -259,7 +278,7 @@ const handleLogout = async () => {
               <input
                 type="text"
                 name="phone"
-                value={formData.phone}
+                value={userData.phone}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 placeholder="Phone"
@@ -268,7 +287,7 @@ const handleLogout = async () => {
               <input
                 type="text"
                 name="qualification"
-                value={formData.qualification}
+                value={userData.qualification}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 placeholder="Qualification"
@@ -277,7 +296,7 @@ const handleLogout = async () => {
               <input
                 type="text"
                 name="technologies"
-                value={formData.technologies}
+                value={userData.technologies}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
                 placeholder="Technologies (comma separated)"

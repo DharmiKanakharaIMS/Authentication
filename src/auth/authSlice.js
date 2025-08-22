@@ -29,12 +29,29 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+// export const registerUser = createAsyncThunk(
+//   "auth/registerUser",
+ 
+//   async (userData, { rejectWithValue }) => {
+//     try {
+//       const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/signup`, userData,
+//         { headers: { "Content-Type": "multipart/form-data" } });
+//       return res.data;
+//     } catch (err) {
+//       return rejectWithValue(err.response?.data?.message || "Registration failed");
+//     }
+//   }
+// );
+
+
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
- 
-  async (formData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue }) => {
     try {
-      const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/signup`, formData);
+      const res = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/auth/signup`,
+        userData
+      );
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Registration failed");
@@ -114,6 +131,9 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      .addCase(logoutUser.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(logoutUser.fulfilled, (state) => {
         state.isAuthenticated = false;
         state.user = null;
@@ -122,8 +142,18 @@ const authSlice = createSlice({
         state.expiresAt = null;
         state.error = null;
         localStorage.removeItem("auth");
-      });
-      
+      })
+      .addCase(logoutUser.rejected, (state) => {
+        // even if server fails, force logout locally
+        state.isAuthenticated = false;
+        state.user = null;
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.expiresAt = null;
+        state.error = null;
+        state.loading = false;
+        localStorage.removeItem("auth");
+      });      
   },
 });
 

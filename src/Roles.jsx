@@ -34,7 +34,7 @@ function Roles() {
     }
 
     fetchRoles();
-  }, [roles]);
+  }, [accessToken]);
 
   const handleAdd = () =>
   {

@@ -33,12 +33,6 @@ function Users() {
         );
         const data = await res.data.data
         setUsers(data.users)
-        // Adjust depending on your API structure
-        // if (res.data && Array.isArray(res.data.users)) {
-        //   setUsers(data.users);
-        // } else {
-        //   console.warn("Unexpected API response:", res.data);
-        // }
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
@@ -53,6 +47,7 @@ function Users() {
       setLoading(false);
     }
   }, [accessToken,users]);
+  
 const handleEditClick = (user) => {
     setSelectedUser(user);
     setFormData({

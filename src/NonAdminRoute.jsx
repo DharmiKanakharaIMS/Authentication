@@ -11,7 +11,7 @@ function NonAdminRoute({ children }) {
   }
 
   // ✅ If admin, redirect to admin
-  if (user?.role === "admin") {
+  if (user?.role === "admin" || user?.role === "superadmin") {
     return <Navigate to="/admin" replace />;
   }
 
