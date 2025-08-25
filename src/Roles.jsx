@@ -2,9 +2,12 @@ import  { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { SquarePen, Trash2 } from 'lucide-react';
+import { addRole, deleteRole, fetchRoles, updateRole } from './auth/rolesSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 function Roles() {
-  const [roles, setRoles] = useState([]);
+const dispatch = useDispatch();
+  const { items: roles, loading, error } = useSelector((state) => state.roles);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [newRole, setNewRole] = useState({
@@ -18,84 +21,37 @@ function Roles() {
   const { accessToken } = JSON.parse(localStorage.getItem('auth'));
 
   useEffect(() => {
-    const { accessToken } = JSON.parse(localStorage.getItem('auth'));
-    async function fetchRoles() {
-      try {
-        const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/get-roles`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        const result = await res.data
-        setRoles(result?.data?.roles || []);
-      } catch (err) {
-        console.error("Failed to fetch roles:", err);
-      }
-    }
-
-    fetchRoles();
-  }, [accessToken]);
+    dispatch(fetchRoles(accessToken));
+  }, [dispatch, accessToken]);
 
   const handleAdd = () =>
   {
     setShowModal(true);
   }
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    
-    try {
-      const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/roles`, newRole, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const result = await res.data.data
-      
-      setRoles([...roles,result.role]); 
-      setNewRole({name:"",description:""});
-      setShowModal(false);
-    } catch (err) {
-      console.error("Failed to create role:", err);
+    dispatch(addRole({ newRole, token: accessToken }));
+    setNewRole({ name: "", description: "" });
+    setShowModal(false);
+  };
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this role?")) {
+      dispatch(deleteRole({ id, token: accessToken }));
     }
   };
-
-  const handleDelete = async(id) =>
-  {
-    const confirmDelete = window.confirm("Are you sure you want to delete this role?");
-    if (!confirmDelete) return;
-      try{
-        await axios.delete(`${import.meta.env.VITE_BASE_URL}/roles/${id}`,{
-          headers:{
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-         setRoles(roles.filter((role) => role._id !== id));
-      }catch(e)
-      {
-        console.log(e)
-      }
-  }
   const editRole = (role) => {
     setEditRoles({ name: role.name, description: role.description, _id: role._id });
     setShowEditModal(true);
   };
 
-   const handleEdit = async (e) => {
+  const handleEdit = (e) => {
     e.preventDefault();
-
-    try {
-      const res = await axios.put(`${import.meta.env.VITE_BASE_URL}/roles/${editRoles._id}`, editRoles, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      const updatedRole = res.data.data.role;
-      setRoles(roles.map(role => role._id === updatedRole._id ? updatedRole : role));
-      setShowEditModal(false);
-      setEditRoles({ name: "", description: "",_id: "" });
-    } catch (err) {
-      console.error("Failed to update role:", err);
-    }
+    dispatch(updateRole({ updatedRole: editRoles, token: accessToken }));
+    setEditRoles({ name: "", description: "", _id: "" });
+    setShowEditModal(false);
   };
+
+  if(loading) return <div className="text-center mt-16 text-gray-500">Loading Roles...</div>;
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
@@ -126,18 +82,15 @@ function Roles() {
               >
                 {role.name.toUpperCase()}
               </Link>
-              {/* Description for small screens */}
               <div className="sm:hidden text-gray-600 mt-1 text-sm">
                 {role.description}
               </div>
             </td>
 
-            {/* Description for medium+ screens */}
             <td className="px-4 py-3 capitalize text-gray-800 text-md sm:text-base hidden sm:table-cell">
               {role.description}
             </td>
 
-            {/* Actions */}
             <td className="px-4 py-4 flex flex-wrap gap-2">
               <button
                 onClick={() => editRole(role)}

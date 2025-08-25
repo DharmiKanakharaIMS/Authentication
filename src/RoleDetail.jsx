@@ -3,13 +3,22 @@ import { useParams, Link } from 'react-router-dom'
 import axios from 'axios'
 import { ArrowLeft, Trash2 } from 'lucide-react'
 import { Switch } from '@mui/material'
+import { useDispatch, useSelector } from 'react-redux'
+import { addPagePermission, deletePermission, fetchPermissions, updatePermission } from './auth/permissionSlice'
+import { fetchPages } from './auth/pagesSlice'
 
 function RoleDetail() {
   const { id } = useParams()
   const [role, setRole] = useState(null)
-  const [pages, setPages] = useState(null)
+  const [selectedPage, setSelectedPage] = useState("");
+  const dispatch = useDispatch();
   const { accessToken } = JSON.parse(localStorage.getItem('auth'))
-   const [permissions, setPermissions] = useState([])
+
+    const { items: permissions,loading } = useSelector(
+    (state) => state.permissions
+  );
+  
+  const { items: pages } = useSelector((state) => state.pages);
 
   useEffect(() => {
     async function fetchRole() {
@@ -26,156 +35,50 @@ function RoleDetail() {
     fetchRole()
   }, [])
 
-  useEffect(()=>{
-    const fetchPermissions =  async () => {
-        try{
-            const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/get-permissions`,{
-                headers:{
-                    Authorization: `Bearer ${accessToken}`
-                }
-            })
-            const data = await res.data.data.permissions
-             const filtered = data.filter(item => item.roleId._id === id)
-             
-             setPermissions(filtered)
-            
-        }catch(e){
-            console.error(e);            
-        }
-    }
-    fetchPermissions()
-  },[])
+  useEffect(() => {
+    dispatch(fetchPermissions({ roleId: id, token: accessToken }));
+  }, [id, accessToken, dispatch]);
 
-  useEffect(()=>{
-    const fetchPages = async() => {
-      try {
-        const res = await axios.get(`${import.meta.env.VITE_BASE_URL}/get-pages`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        const data = await res.data.data.pages
-        setPages(data)
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    fetchPages()
-  },[id,accessToken])
+useEffect(() => {
+  dispatch(fetchPages(accessToken));
+}, [accessToken, dispatch]);
 
-  const handlePageAdd =async (e) =>{
-    const pageName = e.target.value;
+const handlePageAdd = (e) => {
+  const pageName = e.target.value;
+  setSelectedPage(""); 
   if (!pageName) return;
 
-    try {
-    // Find the selected page object
-    const selectedPage = pages.find((p) => p.name === pageName);
-    console.log(selectedPage);
-    
-
-    if (!selectedPage) return;
-
-    // API request to add permission mapping
-    const res = await axios.post(
-      `${import.meta.env.VITE_BASE_URL}/permissions`,
-      {
-        roleId: id,
-        pageId: selectedPage._id,
-        permissions: [], 
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    // Update permissions state immediately
-   setPermissions((prev) => [
-  ...prev,
-  {
-    ...res.data.data.permission,
-    pageId: selectedPage, // attach full page object so name shows
-  },
-]);
-
-    alert(`Page "${selectedPage.name}" added successfully!`);
-  } catch (err) {
-    console.error("Error adding page:", err);
-    alert("Failed to add page");
-  }
-  }
-
-  const handleDelete = async (permId) => {
-  try {
-    // Optimistically update UI (remove row immediately)
-    setPermissions((prev) => prev.filter((p) => p._id !== permId));
-
-    // API call
-    await axios.delete(
-      `${import.meta.env.VITE_BASE_URL}/permissions/${permId}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-
-    toast.success("Permission deleted successfully!");
-  } catch (err) {
-    console.error("Error deleting permission:", err);
-    toast.error("Failed to delete permission");
-
-    // Rollback UI (restore deleted item if API fails)
-    setPermissions((prev) => [...prev, permissions.find((p) => p._id === permId)]);
+  const selectedPage = pages.find((p) => p.name === pageName);
+  if (selectedPage) {
+    dispatch(addPagePermission({ roleId: id, page: selectedPage, token: accessToken }));
   }
 };
 
-const handlePermissionToggle = async (perm, action) => {
-  try {
-    let newPermissions = perm.permissions.includes(action)
+const handleDelete = (permId) => {
+  if (window.confirm("Are you sure you want to delete this permission?")) {
+    dispatch(deletePermission({ permId, token: accessToken }));
+  }
+};
+ const handlePermissionToggle = (perm, action) => {
+    const newPermissions = perm.permissions.includes(action)
       ? perm.permissions.filter((p) => p !== action)
       : [...perm.permissions, action];
 
-    // Optimistic UI update
-    setPermissions((prev) =>
-      prev.map((p) =>
-        p._id === perm._id ? { ...p, permissions: newPermissions } : p
-      )
-    );
+    dispatch(updatePermission({ permId: perm._id, permissions: newPermissions, token: accessToken }));
+  };
 
-    // API call
-    await axios.put(
-      `${import.meta.env.VITE_BASE_URL}/permissions/${perm._id}`,
-      { permissions: newPermissions },
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-  } catch (err) {
-    console.error("Error updating permission:", err);
-  }
-};
-const handleToggleAll = async (perm, enableAll,actions) => {
-  try {
-    // ✅ If true → give ALL actions, if false → clear all
+ const handleToggleAll = (perm, enableAll, actions) => {
     const newPermissions = enableAll ? actions : [];
+    dispatch(updatePermission({ permId: perm._id, permissions: newPermissions, token: accessToken }));
+  };
 
-    // Optimistic UI update
-    setPermissions((prev) =>
-      prev.map((p) =>
-        p._id === perm._id ? { ...p, permissions: newPermissions } : p
-      )
-    );
+  if (!role || loading) {
+  return <div className="text-center mt-16 text-gray-500">Loading...</div>;
+}
 
-    // API call
-    await axios.put(
-      `${import.meta.env.VITE_BASE_URL}/permissions/${perm._id}`,
-      { permissions: newPermissions },
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-  } catch (err) {
-    console.error("Error toggling all permissions:", err);
-  }
-};
-
-  if (!role) return <div className="text-center mt-16 text-gray-500">Loading...</div>
 
   return (
     <div className="p-6 sm:p-8 min-h-screen">
-      {/* Back Button */}
       <div className="mb-6">
         <Link
           to="/admin/roles"
@@ -185,7 +88,6 @@ const handleToggleAll = async (perm, enableAll,actions) => {
         </Link>
       </div>
 
-      {/* Role Card */}
       <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8  mx-auto transition-transform hover:scale-[1.01]">
         <div className='flex justify-between'>
           <div>
@@ -197,12 +99,12 @@ const handleToggleAll = async (perm, enableAll,actions) => {
         </p>
         </div>
         <div><select name="page"
-              value={""}
+              value={selectedPage}
               onChange={handlePageAdd}
               className='w-full px-3 py-2 border rounded-md capitalize'>
                   <option value="" disabled hidden>Add Page</option>
                   {
-                   pages && pages.map((page)=>(
+                    pages?.map((page)=>(
                       <option key={page._id} value={page.name}>{page.name}</option>
                     ))
                   }
@@ -210,7 +112,6 @@ const handleToggleAll = async (perm, enableAll,actions) => {
         </div>
         </div>
 
-        {/* Example Permissions List */}
         <div className="overflow-x-auto">
             <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
             <thead className="bg-gray-100 text-gray-700">
@@ -240,23 +141,13 @@ const handleToggleAll = async (perm, enableAll,actions) => {
                               checked={perm.permissions.includes(action)}
                               onChange={() => handlePermissionToggle(perm, action)}
                             />
-                        {/* {perm.permissions.includes(action) ? (
-                            <span className="text-green-600 font-semibold">✔</span>
-                        ) : (
-                            <span className="text-red-500 font-semibold">✘</span>
-                        )} */}
                         </td>
                     ))}
                     <td className="px-4 py-2 text-center">
                       <Switch
                         checked={actions.every((a) => perm.permissions.includes(a))}
                         onChange={(e) => handleToggleAll(perm, e.target.checked,actions)} // get true/false
-                      />
-                        {/* {hasAll ? (
-                        <span className="text-green-600 font-semibold">✔</span>
-                        ) : (
-                        <span className="text-red-500 font-semibold">✘</span>                        
-                        )} */}                       
+                      />                   
                     </td>
                     <td className='text-center'>
                       <button onClick={()=>handleDelete(perm._id)} className='bg-red-600 text-white p-1 rounded'><Trash2/></button>
